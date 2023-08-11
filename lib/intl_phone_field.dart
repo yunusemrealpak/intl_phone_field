@@ -328,7 +328,6 @@ class _IntlPhoneFieldState extends State<IntlPhoneField> {
       }
     }
 
-    if (widget.autovalidateMode == AutovalidateMode.always) {
       final initialPhoneNumber = PhoneNumber(
         countryISOCode: _selectedCountry.code,
         countryCode: '+${_selectedCountry.dialCode}',
@@ -344,7 +343,6 @@ class _IntlPhoneFieldState extends State<IntlPhoneField> {
           validatorMessage = msg;
         });
       }
-    }
   }
 
   Future<void> _changeCountry() async {
@@ -417,7 +415,7 @@ class _IntlPhoneFieldState extends State<IntlPhoneField> {
         widget.onChanged?.call(phoneNumber);
       },
       validator: (value) {
-        if (value == null || value.isEmpty || !isNumeric(value)) return validatorMessage;
+        if (value == null || value.isEmpty || !isNumeric(value)) return widget.call;
         if (!widget.disableLengthCheck) {
           return value.length >= _selectedCountry.minLength && value.length <= _selectedCountry.maxLength
               ? null

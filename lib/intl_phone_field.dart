@@ -42,11 +42,6 @@ class IntlPhoneField extends StatefulWidget {
   /// A [PhoneNumber] is passed to the validator as argument.
   /// The validator can handle asynchronous validation when declared as a [Future].
   /// Or run synchronously when declared as a [Function].
-  ///
-  /// By default, the validator checks whether the input number length is between selected country's phone numbers min and max length.
-  /// If `disableLengthCheck` is not set to `true`, your validator returned value will be overwritten by the default validator.
-  /// But, if `disableLengthCheck` is set to `true`, your validator will have to check phone number length itself.
-  final FutureOr<String?> Function(PhoneNumber?)? validator;
 
   /// {@macro flutter.widgets.editableText.keyboardType}
   final TextInputType keyboardType;
@@ -243,6 +238,8 @@ class IntlPhoneField extends StatefulWidget {
   //enable the autofill hint for phone number
   final bool disableAutoFillHints;
 
+  final String? validatorMessage;
+
   const IntlPhoneField({
     Key? key,
     this.initialCountryCode,
@@ -261,7 +258,6 @@ class IntlPhoneField extends StatefulWidget {
     this.style,
     this.dropdownTextStyle,
     this.onSubmitted,
-    this.validator,
     this.onChanged,
     this.countries,
     this.onCountryChanged,
@@ -288,6 +284,7 @@ class IntlPhoneField extends StatefulWidget {
     this.showCursor = true,
     this.pickerDialogStyle,
     this.flagsButtonMargin = EdgeInsets.zero,
+    this.validatorMessage,
   }) : super(key: key);
 
   @override
@@ -299,8 +296,6 @@ class _IntlPhoneFieldState extends State<IntlPhoneField> {
   late Country _selectedCountry;
   late List<Country> filteredCountries;
   late String number;
-
-  String? validatorMessage;
 
   @override
   void initState() {
@@ -327,22 +322,6 @@ class _IntlPhoneFieldState extends State<IntlPhoneField> {
         number = number.replaceFirst(RegExp("^${_selectedCountry.fullCountryCode}"), "");
       }
     }
-
-      final initialPhoneNumber = PhoneNumber(
-        countryISOCode: _selectedCountry.code,
-        countryCode: '+${_selectedCountry.dialCode}',
-        number: widget.initialValue ?? '',
-      );
-
-      final value = widget.validator?.call(initialPhoneNumber);
-
-      if (value is String) {
-        validatorMessage = value;
-      } else {
-        (value as Future).then((msg) {
-          validatorMessage = msg;
-        });
-      }
   }
 
   Future<void> _changeCountry() async {
@@ -408,21 +387,17 @@ class _IntlPhoneFieldState extends State<IntlPhoneField> {
           number: value,
         );
 
-        if (widget.autovalidateMode != AutovalidateMode.disabled) {
-          validatorMessage = await widget.validator?.call(phoneNumber);
-        }
-
         widget.onChanged?.call(phoneNumber);
       },
       validator: (value) {
-        if (value == null || value.isEmpty || !isNumeric(value)) return widget.call;
+        if (value == null || value.isEmpty || !isNumeric(value)) return widget.validatorMessage;
         if (!widget.disableLengthCheck) {
           return value.length >= _selectedCountry.minLength && value.length <= _selectedCountry.maxLength
               ? null
               : widget.invalidNumberMessage;
         }
 
-        return validatorMessage;
+        return widget.validatorMessage;
       },
       maxLength: widget.disableLengthCheck ? null : _selectedCountry.maxLength,
       keyboardType: widget.keyboardType,
